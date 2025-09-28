@@ -1,7 +1,7 @@
 import streamlit as st
 import cv2
 import tempfile
-from lane_detection import process_frame  # our lane detection function
+from lane_detection import process_frame  # your lane detection function
 
 st.title("🚗 Lane Detection Web App")
 st.write("Upload a driving video and see detected lanes in real-time!")
@@ -24,7 +24,7 @@ if uploaded_file:
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     out = cv2.VideoWriter(out_file, fourcc, fps, (width, height))
 
-    st.write("⚡ Processing video... Please wait.")
+    st.write("⚡ Processing video... Please wait...")
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -37,15 +37,7 @@ if uploaded_file:
 
     st.success("✅ Processing complete!")
 
-    # Show the processed video
+    # Read back the processed video and display it
     with open(out_file, "rb") as f:
         video_bytes = f.read()
         st.video(video_bytes)
-
-        # Add a download button
-        st.download_button(
-            label="⬇️ Download Processed Video",
-            data=video_bytes,
-            file_name="lane_detected.mp4",
-            mime="video/mp4"
-        )
