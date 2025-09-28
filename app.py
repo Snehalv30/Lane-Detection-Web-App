@@ -36,4 +36,6 @@ if uploaded_file:
     out.release()
 
     st.success("✅ Processing complete!")
-    st.video(out_file)
+    with open(out_file, "rb") as f:
+    video_bytes = f.read()
+    st.video(video_bytes)
