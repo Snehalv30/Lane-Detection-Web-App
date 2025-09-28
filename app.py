@@ -30,7 +30,7 @@ if uploaded_file:
         processed = process_frame(frame)
 
         # Show frame in the Streamlit app
-        stframe.image(processed, channels="BGR", use_column_width=True)
+        stframe.image(processed, channels="BGR",use_container_width=True)
 
     cap.release()
     st.success("✅ Video finished playing!")
