@@ -36,6 +36,16 @@ if uploaded_file:
     out.release()
 
     st.success("✅ Processing complete!")
+
+    # Show the processed video
     with open(out_file, "rb") as f:
-    video_bytes = f.read()
-    st.video(video_bytes)
+        video_bytes = f.read()
+        st.video(video_bytes)
+
+        # Add a download button
+        st.download_button(
+            label="⬇️ Download Processed Video",
+            data=video_bytes,
+            file_name="lane_detected.mp4",
+            mime="video/mp4"
+        )
