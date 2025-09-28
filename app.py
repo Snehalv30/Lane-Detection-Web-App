@@ -1,6 +1,7 @@
 import streamlit as st
 import cv2
 import tempfile
+import os
 from lane_detection import process_frame  # your lane detection function
 
 st.title("🚗 Lane Detection Web App")
@@ -11,17 +12,19 @@ uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 
 if uploaded_file:
     # Save uploaded video temporarily
-    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     tfile.write(uploaded_file.read())
+    tfile.close()
 
     cap = cv2.VideoCapture(tfile.name)
 
-    # Output video file
+    # Check video properties
+    fps = int(cap.get(cv2.CAP_PROP_FPS)) or 25
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
+
     out_file = "output_lane_detection.mp4"
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fourcc = cv2.VideoWriter_fourcc(*"avc1")  # better codec for browser
     out = cv2.VideoWriter(out_file, fourcc, fps, (width, height))
 
     st.write("⚡ Processing video... Please wait...")
@@ -37,7 +40,9 @@ if uploaded_file:
 
     st.success("✅ Processing complete!")
 
-    # Read back the processed video and display it
-    with open(out_file, "rb") as f:
-        video_bytes = f.read()
-        st.video(video_bytes)
+    # Ensure file is written before reading
+    if os.path.exists(out_file) and os.path.getsize(out_file) > 0:
+        with open(out_file, "rb") as f:
+            st.video(f.read())
+    else:
+        st.error("⚠️ Processed video could not be generated. Check FPS/codec.")
