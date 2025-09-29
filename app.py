@@ -50,12 +50,12 @@ if uploaded_file:
 
     cap = cv2.VideoCapture(tfile.name)
 
-    # Output temp file
-    out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
-    fourcc = cv2.VideoWriter_fourcc(*"avc1")  # safer for browsers
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # Output file (must be .avi for XVID)
+    out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".avi").name
+    fourcc = cv2.VideoWriter_fourcc(*"XVID")  # XVID ensures proper playback
+    fps = int(cap.get(cv2.CAP_PROP_FPS)) or 25
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
     out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
     st.write("⚡ Processing video... Please wait.")
@@ -76,10 +76,8 @@ if uploaded_file:
 
     st.success("✅ Processing complete! Watch the output below:")
 
-    # Read binary file properly
-    with open(out_path, "rb") as f:
-        video_bytes = f.read()
-        st.video(video_bytes)
+    # Let Streamlit play the final video
+    st.video(out_path)
 
+    # cleanup original uploaded file
     os.remove(tfile.name)
-    os.remove(out_path)
