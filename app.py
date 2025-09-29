@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import streamlit as st
 import tempfile
-import os
 
 st.set_page_config(page_title="Lane Detection App", layout="wide")
 
@@ -19,13 +18,11 @@ def canny_edge_detection(frame):
 def region_of_interest(edges):
     height, width = edges.shape
     mask = np.zeros_like(edges)
-
     polygon = np.array([[
         (0, height),
         (width, height),
         (width // 2, int(height * 0.6))
     ]], np.int32)
-
     cv2.fillPoly(mask, polygon, 255)
     cropped_edges = cv2.bitwise_and(edges, mask)
     return cropped_edges
@@ -39,26 +36,16 @@ def detect_lines(frame, edges):
     return frame
 
 
-# Upload video
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov", "mkv"])
 
 if uploaded_file:
-    # Save uploaded video
-    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    # Save uploaded video temporarily
+    tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
-    tfile.close()
 
     cap = cv2.VideoCapture(tfile.name)
 
-    # Output file (must be .avi for XVID)
-    out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".avi").name
-    fourcc = cv2.VideoWriter_fourcc(*"XVID")  # XVID ensures proper playback
-    fps = int(cap.get(cv2.CAP_PROP_FPS)) or 25
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
-    out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
-
-    st.write("⚡ Processing video... Please wait.")
+    stframe = st.empty()  # placeholder for video frames
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -69,15 +56,10 @@ if uploaded_file:
         cropped = region_of_interest(edges)
         lane_frame = detect_lines(frame, cropped)
 
-        out.write(lane_frame)
+        # Convert BGR → RGB for Streamlit
+        lane_frame = cv2.cvtColor(lane_frame, cv2.COLOR_BGR2RGB)
+
+        # Display frame by frame like a video
+        stframe.image(lane_frame, channels="RGB", use_container_width=True)
 
     cap.release()
-    out.release()
-
-    st.success("✅ Processing complete! Watch the output below:")
-
-    # Let Streamlit play the final video
-    st.video(out_path)
-
-    # cleanup original uploaded file
-    os.remove(tfile.name)
