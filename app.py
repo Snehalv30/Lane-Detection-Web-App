@@ -38,23 +38,25 @@ def detect_lines(frame, edges):
             cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 5)
     return frame
 
+
 # Upload video
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov", "mkv"])
 
 if uploaded_file:
     # Save uploaded video
-    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     tfile.write(uploaded_file.read())
+    tfile.close()
 
     cap = cv2.VideoCapture(tfile.name)
 
-    # Output file
-    out_file = "processed_output.mp4"
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    # Output temp file
+    out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
+    fourcc = cv2.VideoWriter_fourcc(*"avc1")  # safer for browsers
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    out = cv2.VideoWriter(out_file, fourcc, fps, (width, height))
+    out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
     st.write("⚡ Processing video... Please wait.")
 
@@ -71,7 +73,13 @@ if uploaded_file:
 
     cap.release()
     out.release()
-    os.remove(tfile.name)
 
     st.success("✅ Processing complete! Watch the output below:")
-    st.video(out_file)
+
+    # Read binary file properly
+    with open(out_path, "rb") as f:
+        video_bytes = f.read()
+        st.video(video_bytes)
+
+    os.remove(tfile.name)
+    os.remove(out_path)
