@@ -42,27 +42,36 @@ def detect_lines(frame, edges):
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov", "mkv"])
 
 if uploaded_file:
+    # Save uploaded video
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
 
     cap = cv2.VideoCapture(tfile.name)
 
-    stframe = st.empty()
-    st.write("⚡ Processing and showing video live...")
+    # Output file
+    out_file = "processed_output.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out = cv2.VideoWriter(out_file, fourcc, fps, (width, height))
+
+    st.write("⚡ Processing video... Please wait.")
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Lane detection pipeline
         edges = canny_edge_detection(frame)
         cropped = region_of_interest(edges)
         lane_frame = detect_lines(frame, cropped)
 
-        # Display live video frame
-        stframe.image(lane_frame, channels="BGR", use_container_width=True)
+        out.write(lane_frame)
 
     cap.release()
+    out.release()
     os.remove(tfile.name)
-    st.success("✅ Video processing complete!")
+
+    st.success("✅ Processing complete! Watch the output below:")
+    st.video(out_file)
